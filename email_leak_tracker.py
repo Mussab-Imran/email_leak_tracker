@@ -118,10 +118,31 @@ def read_message(service, message):
     parse_parts(service, parts, message)
     print("="*50)
 
-# TODO Add the ability to search within a date range
-    # User specified range or last week?
-def search_messages(service, query):
+def search_messages(service, message):
+    # This function takes a list of messages and returns a list of only those messages that contain a specific 
+    # search term
+    msg = service.users().messages().get(userId='me', id=message['id'], format='full').execute()
+    payload = msg['payload']
+    parts = payload.get("parts")
+    if parts:
+        for part in parts:
+            mimeType = part.get("mimeType")
+            body = part.get("body")
+            data = body.get("data")
+            if part.get("parts"):
+                # recursively call this function when we see that a part
+                # has parts inside
+                search_messages(service, message, parts=part.get("parts"))
+            if mimeType == "text/plain":
+                # if the email part is text plain
+                if data:
+                    text = urlsafe_b64decode(data).decode()
+                    print(text)
+    
+
+def filter_messages(service, query):
     # Takes in a search query and searches the User's inbox to find email with the query
+    # Search query can be a particular word or date range ("newer_than:7d") or ("Unsubscribe")
     result = service.users().messages().list(userId='me',q=query).execute()
     messages = [ ]
     if 'messages' in result:
@@ -172,9 +193,9 @@ def main():
   """
   try:
     service = build('gmail', 'v1', credentials=creds)
-    message_array = search_messages(service, "unsubscribe")
-    read_message(service, message_array[0])
-    print(message_array[0])
+    message_array = filter_messages(service, "newer_than:7d")
+    read_message(service, message_array[2])
+    print(len(message_array))
 
   except HttpError as error:
     print("ERROR")
@@ -185,7 +206,7 @@ def main():
 #     service = build("gmail", "v1", credentials=creds)
 #     results = service.users().labels().list(userId="me").execute()
 #     labels = results.get("labels", [])
-#     search_messages()
+#     filter_messages()
 
 #     if not labels:
 #       print("No labels found.")
