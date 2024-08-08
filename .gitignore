@@ -163,4 +163,4 @@ cython_debug/
 
 # Credentials
 credentials.json
-toekn.json
+token.json
