@@ -118,38 +118,135 @@ def read_message(service, message):
     parse_parts(service, parts, message)
     print("="*50)
 
-def search_messages(service, message_array, search_term, **parts):
+def parse_message_parts(service, parts, message, search_term):
+    """
+    Utility function that parses the content of an email partition
+    """
+    textAttachments = 0
+    htmlAttachments = 0
+    otherAttachments = 0
+
+    if parts:
+        for part in parts:
+            filename = part.get("filename")
+            mimeType = part.get("mimeType")
+            body = part.get("body")
+            data = body.get("data")
+            file_size = body.get("size")
+            part_headers = part.get("headers")
+            if part.get("parts"):
+                # recursively call this function when we see that a part
+                # has parts inside
+                parse_message_parts(service, part.get("parts"), message, search_term)
+            if mimeType == "text/plain":
+                # if the email part is text plain
+                if data:
+                    text = urlsafe_b64decode(data).decode()
+                    email_body = text.lower()
+                    print(email_body)
+                    if search_term.lower() in email_body:
+                       print("*"*50)
+                       print("PRESENT")
+                       print("*"*50)
+                    else:
+                       print("*"*50)
+                       print("NAAAH")
+                       print("*"*50)
+                    textAttachments+=1
+            elif mimeType == "text/html":
+                # if the email part is an HTML content
+                # save the HTML file and optionally open it in the browser
+                htmlAttachments+=1
+                # if not filename:
+                #     filename = "index.html"
+                # filepath = os.path.join(folder_name, filename)
+                # print("Saving HTML to", filepath)
+                # with open(filepath, "wb") as f:
+                #     f.write(urlsafe_b64decode(data))
+            else:
+                # attachment other than a plain text or HTML
+                otherAttachments+=1
+                # for part_header in part_headers:
+                #     part_header_name = part_header.get("name")
+                #     part_header_value = part_header.get("value")
+                #     if part_header_name == "Content-Disposition":
+                #         if "attachment" in part_header_value:
+                #             # we get the attachment ID 
+                #             # and make another request to get the attachment itself
+                #             print("Saving the file:", filename, "size:", get_size_format(file_size))
+                #             attachment_id = body.get("attachmentId")
+                #             attachment = service.users().messages() \
+                #                         .attachments().get(id=attachment_id, userId='me', messageId=message['id']).execute()
+                #             data = attachment.get("data")
+                #             filepath = os.path.join(folder_name, filename)
+                #             if data:
+                #                 with open(filepath, "wb") as f:
+                #                     f.write(urlsafe_b64decode(data))
+
+def search_messages(service, message_array, search_term):
     # This function takes a list of messages and returns a list of only those messages that contain a specific 
     # search term
-    i = 0
-    for message in message_array:
-        msg = service.users().messages().get(userId='me', id=message['id'], format='full').execute()
-        payload = msg['payload']
-        parts = payload.get("parts")
+    # i = 0
+    # for message in message_array:
+    #     msg = service.users().messages().get(userId='me', id=message['id'], format='full').execute()
+    #     payload = msg['payload']
+    #     parts = payload.get("parts")
 
-        if parts:
-            for part in parts:
-                mimeType = part.get("mimeType")
-                body = part.get("body")
-                data = body.get("data")
-                if part.get("parts"):
-                    # recursively call this function when we see that a part
-                    # has parts inside
-                    i += 1
-                    messages = []
-                    messages.append(message)
-                    print(i)
-                    search_messages(service, messages, search_term, parts=part.get("parts"))
-                    # parse_parts(service, parts, message)
+    #     if parts:
+    #         for part in parts:
+    #             mimeType = part.get("mimeType")
+    #             body = part.get("body")
+    #             data = body.get("data")
+    #             if part.get("parts"):
+    #                 # recursively call this function when we see that a part
+    #                 # has parts inside
+    #                 i += 1
+    #                 messages = []
+    #                 messages.append(message)
+    #                 print(i)
+    #                 search_messages(service, messages, search_term, parts=part.get("parts"))
+    #                 # parse_parts(service, parts, message)
 
-                if mimeType == "text/plain":
-                    # if the email part is text plain
-                    if data:
-                        text = urlsafe_b64decode(data).decode()
-                        # print(i)
+    #             if mimeType == "text/plain":
+    #                 # if the email part is text plain
+    #                 if data:
+    #                     text = urlsafe_b64decode(data).decode()
+    #                     # print(i)
                 
-                else:
-                   continue
+    #             else:
+    #                continue
+    for message in message_array:
+        # This function breaks a particular email to its smaller parts and prints them
+        msg = service.users().messages().get(userId='me', id=message['id'], format='full').execute()
+        # parts can be the message body, or attachments
+        payload = msg['payload']
+        headers = payload.get("headers")
+        parts = payload.get("parts")
+        has_subject = False
+        if headers:
+            # this section prints email basic info & creates a folder for the email
+            for header in headers:
+                name = header.get("name")
+                value = header.get("value")
+                if name.lower() == 'from':
+                    # we print the From address
+                    print("From:", value)
+                if name.lower() == "to":
+                    # we print the To address
+                    print("To:", value)
+                if name.lower() == "subject":
+                    # make our boolean True, the email has "subject"
+                    has_subject = True
+                    # make a directory with the name of the subject
+                    print("Subject:", value)
+                if name.lower() == "date":
+                    # we print the date when the message was sent
+                    print("Date:", value)
+        if not has_subject:
+            print("No Subject")
+
+        parse_message_parts(service, parts, message, search_term)
+        print("="*50)
     
 
 def filter_messages(service, query):
@@ -208,7 +305,7 @@ def main():
     message_array = filter_messages(service, "newer_than:7d")
     # read_message(service, message_array[5])
     search_messages(service, message_array, "unsubscribe")
-    print(len(message_array))
+    # print(len(message_array))
 
   except HttpError as error:
     print("ERROR")
