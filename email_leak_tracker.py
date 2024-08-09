@@ -35,7 +35,7 @@ def parse_parts(service, parts, message):
                 # if the email part is text plain
                 if data:
                     text = urlsafe_b64decode(data).decode()
-                    print(text)
+                    # print(text)
                     textAttachments+=1
             elif mimeType == "text/html":
                 # if the email part is an HTML content
@@ -118,26 +118,38 @@ def read_message(service, message):
     parse_parts(service, parts, message)
     print("="*50)
 
-def search_messages(service, message):
+def search_messages(service, message_array, search_term, **parts):
     # This function takes a list of messages and returns a list of only those messages that contain a specific 
     # search term
-    msg = service.users().messages().get(userId='me', id=message['id'], format='full').execute()
-    payload = msg['payload']
-    parts = payload.get("parts")
-    if parts:
-        for part in parts:
-            mimeType = part.get("mimeType")
-            body = part.get("body")
-            data = body.get("data")
-            if part.get("parts"):
-                # recursively call this function when we see that a part
-                # has parts inside
-                search_messages(service, message, parts=part.get("parts"))
-            if mimeType == "text/plain":
-                # if the email part is text plain
-                if data:
-                    text = urlsafe_b64decode(data).decode()
-                    print(text)
+    i = 0
+    for message in message_array:
+        msg = service.users().messages().get(userId='me', id=message['id'], format='full').execute()
+        payload = msg['payload']
+        parts = payload.get("parts")
+
+        if parts:
+            for part in parts:
+                mimeType = part.get("mimeType")
+                body = part.get("body")
+                data = body.get("data")
+                if part.get("parts"):
+                    # recursively call this function when we see that a part
+                    # has parts inside
+                    i += 1
+                    messages = []
+                    messages.append(message)
+                    print(i)
+                    search_messages(service, messages, search_term, parts=part.get("parts"))
+                    # parse_parts(service, parts, message)
+
+                if mimeType == "text/plain":
+                    # if the email part is text plain
+                    if data:
+                        text = urlsafe_b64decode(data).decode()
+                        # print(i)
+                
+                else:
+                   continue
     
 
 def filter_messages(service, query):
@@ -194,7 +206,8 @@ def main():
   try:
     service = build('gmail', 'v1', credentials=creds)
     message_array = filter_messages(service, "newer_than:7d")
-    read_message(service, message_array[2])
+    # read_message(service, message_array[5])
+    search_messages(service, message_array, "unsubscribe")
     print(len(message_array))
 
   except HttpError as error:
