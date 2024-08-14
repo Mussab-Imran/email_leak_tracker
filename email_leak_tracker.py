@@ -140,23 +140,30 @@ def parse_message_parts(service, parts, message, search_term):
                 parse_message_parts(service, part.get("parts"), message, search_term)
             if mimeType == "text/plain":
                 # if the email part is text plain
+                print("IS TEXT")
                 if data:
                     text = urlsafe_b64decode(data).decode()
                     email_body = text.lower()
-                    print(email_body)
-                    if search_term.lower() in email_body:
-                       print("*"*50)
-                       print("PRESENT")
-                       print("*"*50)
-                    else:
-                       print("*"*50)
-                       print("NAAAH")
-                       print("*"*50)
                     textAttachments+=1
+                    if search_term.lower() in email_body:
+                       print("PRESENT TEXT")
+                    else:
+                       print("NAAAH TEXT")
+                    
             elif mimeType == "text/html":
                 # if the email part is an HTML content
-                # save the HTML file and optionally open it in the browser
+                # decodes the html to text and then searches if html has search_term in it
+                print("IS HTML")
                 htmlAttachments+=1
+                if data:
+                    text = urlsafe_b64decode(data).decode()
+                    email_body = text.lower()
+                    textAttachments+=1
+                    if search_term.lower() in email_body:
+                       print("PRESENT HTML")
+                    else:
+                       print("NAAAH HTML")
+                
                 # if not filename:
                 #     filename = "index.html"
                 # filepath = os.path.join(folder_name, filename)
@@ -302,7 +309,7 @@ def main():
   """
   try:
     service = build('gmail', 'v1', credentials=creds)
-    message_array = filter_messages(service, "newer_than:7d")
+    message_array = filter_messages(service, "newer_than:1d")
     # read_message(service, message_array[5])
     search_messages(service, message_array, "unsubscribe")
     # print(len(message_array))
