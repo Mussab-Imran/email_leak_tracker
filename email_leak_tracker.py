@@ -18,6 +18,13 @@ def parse_parts(service, parts, message):
     textAttachments = 0
     htmlAttachments = 0
     otherAttachments = 0
+    print(message)
+    msg = service.users().messages().get(userId='me', id=message['id'], format='full').execute()
+    email_body = msg.lower()
+    if "unsubscribe" in email_body:
+        print("YAAS")
+    else:
+        print("NOOO")
 
     if parts:
         for part in parts:
@@ -33,6 +40,8 @@ def parse_parts(service, parts, message):
                 parse_parts(service, part.get("parts"), message)
             if mimeType == "text/plain":
                 # if the email part is text plain
+                text = urlsafe_b64decode(data).decode()
+                # print(text)
                 if data:
                     text = urlsafe_b64decode(data).decode()
                     # print(text)
@@ -90,29 +99,11 @@ def read_message(service, message):
             if name.lower() == "subject":
                 # make our boolean True, the email has "subject"
                 has_subject = True
-                # make a directory with the name of the subject
-                # folder_name = clean(value)
-                # we will also handle emails with the same subject name
-                # folder_counter = 0
-                # while os.path.isdir(folder_name):
-                #     folder_counter += 1
-                #     # we have the same folder name, add a number next to it
-                #     if folder_name[-1].isdigit() and folder_name[-2] == "_":
-                #         folder_name = f"{folder_name[:-2]}_{folder_counter}"
-                #     elif folder_name[-2:].isdigit() and folder_name[-3] == "_":
-                #         folder_name = f"{folder_name[:-3]}_{folder_counter}"
-                #     else:
-                #         folder_name = f"{folder_name}_{folder_counter}"
-                # os.mkdir(folder_name)
                 print("Subject:", value)
             if name.lower() == "date":
                 # we print the date when the message was sent
                 print("Date:", value)
     if not has_subject:
-        # if the email does not have a subject, then make a folder with "email" name
-        # since folders are created based on subjects
-        # if not os.path.isdir(folder_name):
-        #     os.mkdir(folder_name)
         print("No Subject")
 
     parse_parts(service, parts, message)
@@ -141,87 +132,40 @@ def parse_message_parts(service, parts, message, search_term):
             if mimeType == "text/plain":
                 # if the email part is text plain
                 print("IS TEXT")
-                if data:
-                    text = urlsafe_b64decode(data).decode()
-                    email_body = text.lower()
-                    textAttachments+=1
-                    if search_term.lower() in email_body:
-                       print("PRESENT TEXT")
-                    else:
-                       print("NAAAH TEXT")
+                text = urlsafe_b64decode(data).decode()
+                # print(text)
+                # if data:
+                #     text = urlsafe_b64decode(data).decode()
+                #     email_body = text.lower()
+                #     textAttachments+=1
+                #     if search_term.lower() in email_body:
+                #        print("PRESENT TEXT")
+                #     else:
+                #        print("NAAAH TEXT")
                     
             elif mimeType == "text/html":
                 # if the email part is an HTML content
                 # decodes the html to text and then searches if html has search_term in it
                 print("IS HTML")
-                htmlAttachments+=1
-                if data:
-                    text = urlsafe_b64decode(data).decode()
-                    email_body = text.lower()
-                    textAttachments+=1
-                    if search_term.lower() in email_body:
-                       print("PRESENT HTML")
-                    else:
-                       print("NAAAH HTML")
-                
-                # if not filename:
-                #     filename = "index.html"
-                # filepath = os.path.join(folder_name, filename)
-                # print("Saving HTML to", filepath)
-                # with open(filepath, "wb") as f:
-                #     f.write(urlsafe_b64decode(data))
+                text = urlsafe_b64decode(data).decode()
+                # print(text)
+                # htmlAttachments+=1
+                # if data:
+                #     text = urlsafe_b64decode(data).decode()
+                #     email_body = text.lower()
+                #     textAttachments+=1
+                #     if search_term.lower() in email_body:
+                #        print("PRESENT HTML")
+                #     else:
+                #        print("NAAAH HTML")
             else:
                 # attachment other than a plain text or HTML
                 otherAttachments+=1
-                # for part_header in part_headers:
-                #     part_header_name = part_header.get("name")
-                #     part_header_value = part_header.get("value")
-                #     if part_header_name == "Content-Disposition":
-                #         if "attachment" in part_header_value:
-                #             # we get the attachment ID 
-                #             # and make another request to get the attachment itself
-                #             print("Saving the file:", filename, "size:", get_size_format(file_size))
-                #             attachment_id = body.get("attachmentId")
-                #             attachment = service.users().messages() \
-                #                         .attachments().get(id=attachment_id, userId='me', messageId=message['id']).execute()
-                #             data = attachment.get("data")
-                #             filepath = os.path.join(folder_name, filename)
-                #             if data:
-                #                 with open(filepath, "wb") as f:
-                #                     f.write(urlsafe_b64decode(data))
+                print("OTHER ATTACHMENT")
 
 def search_messages(service, message_array, search_term):
     # This function takes a list of messages and returns a list of only those messages that contain a specific 
     # search term
-    # i = 0
-    # for message in message_array:
-    #     msg = service.users().messages().get(userId='me', id=message['id'], format='full').execute()
-    #     payload = msg['payload']
-    #     parts = payload.get("parts")
-
-    #     if parts:
-    #         for part in parts:
-    #             mimeType = part.get("mimeType")
-    #             body = part.get("body")
-    #             data = body.get("data")
-    #             if part.get("parts"):
-    #                 # recursively call this function when we see that a part
-    #                 # has parts inside
-    #                 i += 1
-    #                 messages = []
-    #                 messages.append(message)
-    #                 print(i)
-    #                 search_messages(service, messages, search_term, parts=part.get("parts"))
-    #                 # parse_parts(service, parts, message)
-
-    #             if mimeType == "text/plain":
-    #                 # if the email part is text plain
-    #                 if data:
-    #                     text = urlsafe_b64decode(data).decode()
-    #                     # print(i)
-                
-    #             else:
-    #                continue
     for message in message_array:
         # This function breaks a particular email to its smaller parts and prints them
         msg = service.users().messages().get(userId='me', id=message['id'], format='full').execute()
@@ -310,32 +254,13 @@ def main():
   try:
     service = build('gmail', 'v1', credentials=creds)
     message_array = filter_messages(service, "newer_than:1d")
-    # read_message(service, message_array[5])
-    search_messages(service, message_array, "unsubscribe")
+    read_message(service, message_array[2])
+    # search_messages(service, message_array, "unsubscribe")
     # print(len(message_array))
 
   except HttpError as error:
     print("ERROR")
     exit(1)
-
-#   try:
-#     # Call the Gmail API
-#     service = build("gmail", "v1", credentials=creds)
-#     results = service.users().labels().list(userId="me").execute()
-#     labels = results.get("labels", [])
-#     filter_messages()
-
-#     if not labels:
-#       print("No labels found.")
-#       return
-#     print("Labels:")
-#     for label in labels:
-#       print(label["name"])
-
-#   except HttpError as error:
-#     # TODO(developer) - Handle errors from gmail API.
-#     print(f"An error occurred: {error}")
-
 
 if __name__ == "__main__":
   main()
