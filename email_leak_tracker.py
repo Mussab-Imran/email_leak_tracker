@@ -7,6 +7,7 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 # for encoding/decoding messages in base64
 from base64 import urlsafe_b64decode, urlsafe_b64encode
+import json
 
 # If modifying these scopes, delete the file token.json.
 SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
@@ -18,13 +19,6 @@ def parse_parts(service, parts, message):
     textAttachments = 0
     htmlAttachments = 0
     otherAttachments = 0
-    print(message)
-    msg = service.users().messages().get(userId='me', id=message['id'], format='full').execute()
-    email_body = msg.lower()
-    if "unsubscribe" in email_body:
-        print("YAAS")
-    else:
-        print("NOOO")
 
     if parts:
         for part in parts:
@@ -134,14 +128,14 @@ def parse_message_parts(service, parts, message, search_term):
                 print("IS TEXT")
                 text = urlsafe_b64decode(data).decode()
                 # print(text)
-                # if data:
-                #     text = urlsafe_b64decode(data).decode()
-                #     email_body = text.lower()
-                #     textAttachments+=1
-                #     if search_term.lower() in email_body:
-                #        print("PRESENT TEXT")
-                #     else:
-                #        print("NAAAH TEXT")
+                if data:
+                    text = urlsafe_b64decode(data).decode()
+                    email_body = text.lower()
+                    textAttachments+=1
+                    if search_term.lower() in email_body:
+                       print("PRESENT TEXT")
+                    else:
+                       print("NAAAH TEXT")
                     
             elif mimeType == "text/html":
                 # if the email part is an HTML content
@@ -149,19 +143,27 @@ def parse_message_parts(service, parts, message, search_term):
                 print("IS HTML")
                 text = urlsafe_b64decode(data).decode()
                 # print(text)
-                # htmlAttachments+=1
-                # if data:
-                #     text = urlsafe_b64decode(data).decode()
-                #     email_body = text.lower()
-                #     textAttachments+=1
-                #     if search_term.lower() in email_body:
-                #        print("PRESENT HTML")
-                #     else:
-                #        print("NAAAH HTML")
+                htmlAttachments+=1
+                if data:
+                    text = urlsafe_b64decode(data).decode()
+                    email_body = text.lower()
+                    textAttachments+=1
+                    if search_term.lower() in email_body:
+                       print("PRESENT HTML")
+                    else:
+                       print("NAAAH HTML")
             else:
                 # attachment other than a plain text or HTML
                 otherAttachments+=1
                 print("OTHER ATTACHMENT")
+    else:
+        print(message)
+        msg = service.users().messages().get(userId='me', id=message['id'], format='full').execute()
+        email_body = json.dumps(msg)
+        if "unsubscribe" in email_body:
+            print("PRESENT ELSE")
+        else:
+            print("NAAH ELSE")
 
 def search_messages(service, message_array, search_term):
     # This function takes a list of messages and returns a list of only those messages that contain a specific 
@@ -253,9 +255,9 @@ def main():
   """
   try:
     service = build('gmail', 'v1', credentials=creds)
-    message_array = filter_messages(service, "newer_than:1d")
-    read_message(service, message_array[2])
-    # search_messages(service, message_array, "unsubscribe")
+    message_array = filter_messages(service, "newer_than:2d")
+    # read_message(service, message_array[3])
+    search_messages(service, message_array, "unsubscribe")
     # print(len(message_array))
 
   except HttpError as error:
