@@ -10,7 +10,7 @@ from base64 import urlsafe_b64decode, urlsafe_b64encode
 import json
 
 # If modifying these scopes, delete the file token.json.
-SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
+SCOPES = ["https://www.googleapis.com/auth/gmail.readonly", "https://www.googleapis.com/auth/gmail.labels"]
 
 def parse_parts(service, parts, message):
     """
@@ -128,14 +128,14 @@ def parse_message_parts(service, parts, message, search_term):
                 # print("IS TEXT")
                 text = urlsafe_b64decode(data).decode()
                 # print(text)
-                if data:
-                    text = urlsafe_b64decode(data).decode()
-                    email_body = text.lower()
-                    textAttachments+=1
-                    if search_term.lower() in email_body:
-                       print("PRESENT TEXT")
-                    else:
-                       print("NAAAH TEXT")
+                # if data:
+                #     text = urlsafe_b64decode(data).decode()
+                #     email_body = text.lower()
+                #     textAttachments+=1
+                #     if search_term.lower() in email_body:
+                #        print("PRESENT TEXT")
+                #     else:
+                #        print("NAAAH TEXT")
                     
             elif mimeType == "text/html":
                 # if the email part is an HTML content
@@ -143,27 +143,27 @@ def parse_message_parts(service, parts, message, search_term):
                 # print("IS HTML")
                 text = urlsafe_b64decode(data).decode()
                 # print(text)
-                htmlAttachments+=1
-                if data:
-                    text = urlsafe_b64decode(data).decode()
-                    email_body = text.lower()
-                    textAttachments+=1
-                    if search_term.lower() in email_body:
-                       print("PRESENT HTML")
-                    else:
-                       print("NAAAH HTML")
+                # htmlAttachments+=1
+                # if data:
+                #     text = urlsafe_b64decode(data).decode()
+                #     email_body = text.lower()
+                #     textAttachments+=1
+                #     if search_term.lower() in email_body:
+                #        print("PRESENT HTML")
+                #     else:
+                #        print("NAAAH HTML")
             else:
                 # attachment other than a plain text or HTML
                 otherAttachments+=1
-                print("OTHER ATTACHMENT")
+                # print("OTHER ATTACHMENT")
     else:
-        print(message)
+        # print(message)
         msg = service.users().messages().get(userId='me', id=message['id'], format='full').execute()
-        email_body = json.dumps(msg)
-        if "unsubscribe" in email_body:
-            print("PRESENT ELSE")
-        else:
-            print("NAAH ELSE")
+        # email_body = json.dumps(msg)
+        # if "unsubscribe" in email_body:
+        #     print("PRESENT ELSE")
+        # else:
+        #     print("NAAH ELSE")
 
 def search_messages(service, message_array, search_term):
     # This function takes a list of messages and returns a list of only those messages that contain a specific 
@@ -184,19 +184,21 @@ def search_messages(service, message_array, search_term):
                 if name.lower() == 'from':
                     # we print the From address
                     print("From:", value)
+                    email = get_email(value)
+                    add_sender(email, service, message['id'], "Label_3203579961078862081")
                 # if name.lower() == "to":
                 #     # we print the To address
                 #     print("To:", value)
-                # if name.lower() == "subject":
-                #     # make our boolean True, the email has "subject"
-                #     has_subject = True
+                if name.lower() == "subject":
+                    # make our boolean True, the email has "subject"
+                    has_subject = True
                 #     # make a directory with the name of the subject
                 #     print("Subject:", value)
                 # if name.lower() == "date":
                 #     # we print the date when the message was sent
                 #     print("Date:", value)
         if not has_subject:
-            print("No Subject")
+            print("No Subject!")
 
         parse_message_parts(service, parts, message, search_term)
         print("="*50)
@@ -217,19 +219,20 @@ def filter_messages(service, query):
     return messages
 
 # TODO Add a flag message function to add label to an email
-def flag_message(service):
-    label_object = {
-        "name": "Flags",
-        "labelListVisibility": "labelShow",
-        "messageListVisibility": "show"
-    }
-    label = service.users().labels().create(userId='me', body=label_object).execute()
-    print(f"Label created: {label['name']} ({label['id']})")
-    return label['id']
+def flag_message(service, message_id, label_id):
+    print("HERE")
+    msg = service.users().messages().modify(
+        userId='me',
+        id=message_id,
+        body={
+            'addLabelIds': [label_id]
+        }
+    ).execute()
+    print(f"Label added to email: {msg}")
 
 # TODO Add a sender to the json file and flag the 
 # appropriate email with a label
-def add_sender(email):
+def add_sender(email, service, message_id, label_id):
     # Load the existing data from the JSON file
     json_file_path = 'sender_list.json'
     if os.path.exists(json_file_path):
@@ -239,15 +242,33 @@ def add_sender(email):
         email_counts = {}
 
     # Update the count for the received email
-    # TODO Add the labels to the emails here
     if email in email_counts:
         email_counts[email] += 1
+        if email_counts[email] <= 3:
+            flag_message(service, message_id, label_id)
+            print(email)        
     else:
         email_counts[email] = 1
+        flag_message(service, message_id, label_id)
 
     # Write the updated data back to the JSON file
     with open(json_file_path, 'w') as file:
         json.dump(email_counts, file, indent=4)
+
+def get_email(email):
+    # initializing substrings
+    sub1 = "<"
+    sub2 = ">"
+    
+    # getting index of substrings
+    idx1 = email.index(sub1)
+    idx2 = email.index(sub2)
+    
+    # length of substring 1 is added to
+    # get string from next character
+    res = email[idx1 + len(sub1): idx2]
+
+    return(res)
 
 def main():
   """
@@ -277,9 +298,9 @@ def main():
   try:
     service = build('gmail', 'v1', credentials=creds)
     message_array = filter_messages(service, "newer_than:7d unsubscribe")
+    search_messages(service, message_array, "unsubscribe")
     # read_message(service, message_array[3])
-    # search_messages(service, message_array, "unsubscribe")
-    flag_message(service)
+    # flag_message(service, , "Label_3203579961078862081")
     # print(len(message_array))
 
   except HttpError as error:
