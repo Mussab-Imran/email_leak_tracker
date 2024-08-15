@@ -125,7 +125,7 @@ def parse_message_parts(service, parts, message, search_term):
                 parse_message_parts(service, part.get("parts"), message, search_term)
             if mimeType == "text/plain":
                 # if the email part is text plain
-                print("IS TEXT")
+                # print("IS TEXT")
                 text = urlsafe_b64decode(data).decode()
                 # print(text)
                 if data:
@@ -140,7 +140,7 @@ def parse_message_parts(service, parts, message, search_term):
             elif mimeType == "text/html":
                 # if the email part is an HTML content
                 # decodes the html to text and then searches if html has search_term in it
-                print("IS HTML")
+                # print("IS HTML")
                 text = urlsafe_b64decode(data).decode()
                 # print(text)
                 htmlAttachments+=1
@@ -184,17 +184,17 @@ def search_messages(service, message_array, search_term):
                 if name.lower() == 'from':
                     # we print the From address
                     print("From:", value)
-                if name.lower() == "to":
-                    # we print the To address
-                    print("To:", value)
-                if name.lower() == "subject":
-                    # make our boolean True, the email has "subject"
-                    has_subject = True
-                    # make a directory with the name of the subject
-                    print("Subject:", value)
-                if name.lower() == "date":
-                    # we print the date when the message was sent
-                    print("Date:", value)
+                # if name.lower() == "to":
+                #     # we print the To address
+                #     print("To:", value)
+                # if name.lower() == "subject":
+                #     # make our boolean True, the email has "subject"
+                #     has_subject = True
+                #     # make a directory with the name of the subject
+                #     print("Subject:", value)
+                # if name.lower() == "date":
+                #     # we print the date when the message was sent
+                #     print("Date:", value)
         if not has_subject:
             print("No Subject")
 
@@ -216,17 +216,38 @@ def filter_messages(service, query):
             messages.extend(result['messages'])
     return messages
 
-# TODO Add a flag message function
-def flag_message(message):
-   print("flag message")
+# TODO Add a flag message function to add label to an email
+def flag_message(service):
+    label_object = {
+        "name": "Flags",
+        "labelListVisibility": "labelShow",
+        "messageListVisibility": "show"
+    }
+    label = service.users().labels().create(userId='me', body=label_object).execute()
+    print(f"Label created: {label['name']} ({label['id']})")
+    return label['id']
 
-# TODO Add a check sender function
-def check_sender(message):
-   print("check sender")
+# TODO Add a sender to the json file and flag the 
+# appropriate email with a label
+def add_sender(email):
+    # Load the existing data from the JSON file
+    json_file_path = 'sender_list.json'
+    if os.path.exists(json_file_path):
+        with open(json_file_path, 'r') as file:
+            email_counts = json.load(file)
+    else:
+        email_counts = {}
 
-# TODO Add a add sender function
-def add_sender():
-   print("add sender")
+    # Update the count for the received email
+    # TODO Add the labels to the emails here
+    if email in email_counts:
+        email_counts[email] += 1
+    else:
+        email_counts[email] = 1
+
+    # Write the updated data back to the JSON file
+    with open(json_file_path, 'w') as file:
+        json.dump(email_counts, file, indent=4)
 
 def main():
   """
@@ -255,9 +276,10 @@ def main():
   """
   try:
     service = build('gmail', 'v1', credentials=creds)
-    message_array = filter_messages(service, "newer_than:2d")
+    message_array = filter_messages(service, "newer_than:7d unsubscribe")
     # read_message(service, message_array[3])
-    search_messages(service, message_array, "unsubscribe")
+    # search_messages(service, message_array, "unsubscribe")
+    flag_message(service)
     # print(len(message_array))
 
   except HttpError as error:
