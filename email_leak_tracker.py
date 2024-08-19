@@ -10,7 +10,7 @@ from base64 import urlsafe_b64decode, urlsafe_b64encode
 import json
 
 # If modifying these scopes, delete the file token.json.
-SCOPES = ["https://www.googleapis.com/auth/gmail.readonly", "https://www.googleapis.com/auth/gmail.labels"]
+SCOPES = ['https://www.googleapis.com/auth/gmail.modify']
 
 def parse_parts(service, parts, message):
     """
@@ -220,15 +220,19 @@ def filter_messages(service, query):
 
 # TODO Add a flag message function to add label to an email
 def flag_message(service, message_id, label_id):
-    print("HERE")
-    msg = service.users().messages().modify(
-        userId='me',
-        id=message_id,
-        body={
-            'addLabelIds': [label_id]
-        }
-    ).execute()
-    print(f"Label added to email: {msg}")
+    # msg = service.users().messages().modify(
+    #     userId='me',
+    #     id=message_id,
+    #     body={
+    #         'addLabelIds': [label_id]
+    #     }
+    # ).execute()
+    # print(f"Label added to email: {msg}")
+    label_body = {
+    'removeLabelIds': ['INBOX'],
+    'addLabelIds': [label_id]
+    }
+    service.users().messages().modify(userId='me', id=message_id, body=label_body ).execute()
 
 # TODO Add a sender to the json file and flag the 
 # appropriate email with a label
@@ -270,6 +274,18 @@ def get_email(email):
 
     return(res)
 
+def list_labels(service):
+    results = service.users().labels().list(userId='me').execute()
+    labels = results.get('labels', [])
+    if not labels:
+        print('No labels found.')
+    else:
+        print('Labels:')
+        for label in labels:
+            print(f"{label['name']} ({label['id']})")
+    return labels
+
+
 def main():
   """
     START - Initial setup
@@ -297,6 +313,7 @@ def main():
   """
   try:
     service = build('gmail', 'v1', credentials=creds)
+    # list_labels(service)
     message_array = filter_messages(service, "newer_than:7d unsubscribe")
     search_messages(service, message_array, "unsubscribe")
     # read_message(service, message_array[3])
@@ -304,6 +321,7 @@ def main():
     # print(len(message_array))
 
   except HttpError as error:
+    print(HttpError)
     print("ERROR")
     exit(1)
 
