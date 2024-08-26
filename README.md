@@ -25,7 +25,12 @@ The python script works by building a database of past senders who have sent ema
 
     ``$ pip install --upgrade google-api-python-client google-auth-httplib2 google-auth-oauthlib``
 
+  ### Steps to run the program
+  - When you first run the program, you will be taken to the gmail screen to choose an account
+  - Select an account and click continue
+  - This will generate a token.json file, this file is unique to each account and must be deleted and recreated if the user wishes to run the script on a different gmail account
+  - Once you run the program, the script will look at emails from the last 7 days that contain the word unsubscribe and build its own local database in a file called sender_list.json
 
 Contact
 Author: Mussab Imran
-Email: mussabimran7@gmail.com
+Discord: mussab__ 
