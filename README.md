@@ -22,7 +22,8 @@ Instruction:
   - Once enabled head to credentials tab in the dashboard and download the appropriate OAuth 2.0 Client ID
   - rename it to credentials.json and place it in the same directory as the python script
   - Install the required libraries by running the following command
-    $  pip install --upgrade google-api-python-client google-auth-httplib2 google-auth-oauthlib
+
+    $ pip install --upgrade google-api-python-client google-auth-httplib2 google-auth-oauthlib
 
 
 Contact
