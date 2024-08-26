@@ -9,11 +9,17 @@ Features:
 - Run: Runs the script to go over the emails with a specified keyword over a set period of time
 
 Prerequisites:
-- Python
+- Python 3
 - Gmail account
 - oAuth credentials
 
 Instruction:
+  oAuth Credentials:
+  - To generate a credentials file head to https://console.cloud.google.com/apis/dashboard
+  - Click on enable APIs and services
+  - Navigate to gmail API and click enable
+  - Once enabled head to credentials tab in the dashboard and download the appropriate OAuth 2.0 Client ID
+  - rename it to credentials.json and place it in the same directory as the python script
 
 
 Contact
