@@ -32,5 +32,7 @@ The python script works by building a database of past senders who have sent ema
   - Once you run the program, the script will look at emails from the last 7 days that contain the word unsubscribe and build its own local database in a file called sender_list.json
 
 Contact
+
 Author: Mussab Imran
+
 Discord: mussab__ 
