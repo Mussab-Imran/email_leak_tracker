@@ -31,7 +31,7 @@ The python script works by building a database of past senders who have sent ema
   - This will generate a token.json file, this file is unique to each account and must be deleted and recreated if the user wishes to run the script on a different gmail account
   - Once you run the program, the script will look at emails from the last 7 days that contain the word unsubscribe and build its own local database in a file called sender_list.json
 
-Contact
+## Contact
 
 Author: Mussab Imran
 
