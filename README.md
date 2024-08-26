@@ -10,16 +10,19 @@ Features:
 
 Prerequisites:
 - Python 3
+- pip
 - Gmail account
 - oAuth credentials
 
 Instruction:
-  oAuth Credentials:
+  How to get oAuth Credentials:
   - To generate a credentials file head to https://console.cloud.google.com/apis/dashboard
   - Click on enable APIs and services
   - Navigate to gmail API and click enable
   - Once enabled head to credentials tab in the dashboard and download the appropriate OAuth 2.0 Client ID
   - rename it to credentials.json and place it in the same directory as the python script
+  - Install the required libraries by running the following command
+    $  pip install --upgrade google-api-python-client google-auth-httplib2 google-auth-oauthlib
 
 
 Contact
